@@ -1,0 +1,42 @@
+name: yunphp
+version: 1
+  -directoryindex:index.phpindex.html
+  -errordoc:404 /error/404.html
+  -errordoc:500 /error/500.html
+//in_header 是请求的header,outer_header 是响应的header header_name 是header的名字
+//op是操作符 ~表示匹配 !~表示不匹配 ==表示相等 !=表示不等 > >= < <=用于整数
+//string 是"xxxx"
+//string_or_digit
+//path 是系统宏，表示拥护请求的url去掉主机部分和查询部分剩下的部分 .com/user/index.php?dfasdfa=3
+//query_string 是系统宏，表示查询串
+//is_file() 和is_dir()是系统函数，判断path是文件还是目录
+
+//压缩
+- compress:if() compress
+- compress:if(out_header["Content-Length"]>=500)compress
+- compress:if(in_header["Referer"]=="gphone")compress
+- compress:if(path ~/big/")compress
+- compress:if(out_header["Content_Type"] ~ "text") compress
+
+
+//url重写
+- rewrite:if() goto target_url
+//path只能出现一个，出现多个，只有最后一个生效，当省略path时候，表示任何请求
+//target_url表示重定向的目标url，在target_url可以以$N的形式表示path中匹配到的内容，%N的形式表示最后一个
+//query_string 中匹配到的内容，因为query_string 可以啊if中出现多次，以%{QUERY_STRING}表示查询串
+
+- rewrite if(query_string ~"^(so)$" && path ~ "zhaochou$") goto "/url/%1"
+- rewrite if(is_dir()&&path ~ "urldir/(.*)") goto "/url/$1"
+- rewrite if(!is_dir() && !is_dir()) goto "index.php?%{QUERY_STRING}"
+
+- rewrite if(path ~"urldir/(.*)" && in_header["referer"] == "sina") goto "/url/$1"
+- rewrite if(is_dir()&&path ~ "urldir/(.*)") goto "/url/$1"
+
+
+指定过期时间和头信息
+-expire:if(single_express) time seconds
+-mime:if(single_express) type content-type
+
+-expire:if(in_header["referer"] ~ "sina") time 10
+-mime:if(path ~ "\.pdf2$") types "application/pdf"
+
